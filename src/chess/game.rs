@@ -54,6 +54,10 @@ impl Game{
         &self.turn
     }
 
+    pub fn moves(&self) -> &Vec<Movement>{
+        &self.moves
+    }
+
     pub fn move_piece(&mut self, movement: Movement) -> Result<String, String>{
         let piece = match self.board.get_tile(movement.from()).get_piece(){
             Some(piece) => piece,

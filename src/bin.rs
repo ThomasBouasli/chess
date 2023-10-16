@@ -1,4 +1,4 @@
-use crate::chess::{game::Game, movement::{Movement, self}};
+use crate::chess::{game::Game, movement::{Movement, self}, board};
 
 
 
@@ -18,8 +18,10 @@ fn main() {
         Movement::new(movement::ChessNotationPosition::new('f', 1).to_position(), movement::ChessNotationPosition::new('c', 4).to_position()),
         Movement::new(movement::ChessNotationPosition::new('d', 7).to_position(), movement::ChessNotationPosition::new('d', 6).to_position()),
         Movement::new(movement::ChessNotationPosition::new('c', 4).to_position(), movement::ChessNotationPosition::new('f', 7).to_position()),
-        Movement::new(movement::ChessNotationPosition::new('d', 6).to_position(), movement::ChessNotationPosition::new('d', 5).to_position()),
-        Movement::new(movement::ChessNotationPosition::new('f', 7).to_position(), movement::ChessNotationPosition::new('e', 8).to_position()),
+        Movement::new(movement::ChessNotationPosition::new('e', 8).to_position(), movement::ChessNotationPosition::new('f', 7).to_position()),
+        Movement::new(movement::ChessNotationPosition::new('d', 2).to_position(), movement::ChessNotationPosition::new('d', 3).to_position()),
+        Movement::new(movement::ChessNotationPosition::new('f', 7).to_position(), movement::ChessNotationPosition::new('f', 6).to_position()),
+        Movement::new(movement::ChessNotationPosition::new('c', 1).to_position(), movement::ChessNotationPosition::new('g', 5).to_position()),
     );
 
     for m in moves{
@@ -30,5 +32,9 @@ fn main() {
 
         println!("{}", game.board());
 
+    }
+
+    for mo in game.moves(){
+        println!("{}", mo);
     }
 }
