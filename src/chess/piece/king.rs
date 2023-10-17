@@ -28,11 +28,7 @@ impl Piece for King{
     }
 
     fn valid_move(&self, position: &RelativePosition) -> (Vec<RelativePosition>, bool) {
-        if position.file.abs() <= 1 && position.rank.abs() <= 1{
-            (Vec::new(), true)
-        }else{
-            (Vec::new(), false)
-        }
+        (Vec::new(), position.file.abs() <= 1 && position.rank.abs() <= 1)
     }
 }
 
@@ -44,5 +40,51 @@ impl Display for King {
             Color::Black => colored::Color::Red,
         })
         .fmt(f)
+    }
+}
+
+#[cfg(test)]
+mod tests{
+    use super::*;
+
+    #[test]
+    fn it_should_only_move_to_adjacent_squares(){
+        let king = King::new(Color::White);
+
+        let mut adjacent_positions = Vec::new();
+
+        for file in -1..=1{
+            for rank in -1..=1{
+                adjacent_positions.push(RelativePosition{file, rank});
+            }
+        }
+
+        for position in adjacent_positions{
+            let (movement_path, valid_movement) = king.valid_move(&position);
+            assert_eq!(valid_movement, true);
+            assert_eq!(movement_path.len(), 0);
+        }
+    }
+
+    #[test]
+    fn it_should_not_move_to_distant_squares(){
+        let king = King::new(Color::White);
+
+        let mut distant_positions = Vec::new();
+
+        for file in -2i8..=2{
+            for rank in -2i8..=2{
+                if file.abs() > 1 || rank.abs() > 1{
+                    distant_positions.push(RelativePosition{file, rank});
+                }
+            }
+        }
+
+        for position in distant_positions{
+            let (movement_path, valid_movement) = king.valid_move(&position);
+            assert_eq!(valid_movement, false);
+            assert_eq!(movement_path.len(), 0);
+        }
+
     }
 }

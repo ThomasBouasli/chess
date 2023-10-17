@@ -55,24 +55,20 @@ mod tests{
     fn test_knight_valid_move(){
         let knight = Knight::new(Color::White);
 
-        let (valid_moves, can_move) = knight.valid_move(&RelativePosition{file: 2, rank: 1});
-        assert_eq!(valid_moves, Vec::new());
-        assert_eq!(can_move, true);
+        let mut possible_moves = Vec::new();
 
-        let (valid_moves, can_move) = knight.valid_move(&RelativePosition{file: 1, rank: 2});
-        assert_eq!(valid_moves, Vec::new());
-        assert_eq!(can_move, true);
+        for file in -2i8..=2{
+            for rank in -2i8..=2{
+                if file.abs() != rank.abs() && file != 0 && rank != 0{
+                    possible_moves.push(RelativePosition{file, rank});
+                }
+            }
+        }
 
-        let (valid_moves, can_move) = knight.valid_move(&RelativePosition{file: 2, rank: 2});
-        assert_eq!(valid_moves, Vec::new());
-        assert_eq!(can_move, false);
-
-        let (valid_moves, can_move) = knight.valid_move(&RelativePosition{file: 1, rank: 1});
-        assert_eq!(valid_moves, Vec::new());
-        assert_eq!(can_move, false);
-
-        let (valid_moves, can_move) = knight.valid_move(&RelativePosition{file: 0, rank: 0});
-        assert_eq!(valid_moves, Vec::new());
-        assert_eq!(can_move, false);
+        for position in possible_moves{
+            let (moves, valid) = knight.valid_move(&position);
+            assert!(valid, "Knight should be able to move to {:?}", position);
+            assert_eq!(moves.len(), 0, "Knight should not be able to move to {:?}", position);
+        }
     }
 }

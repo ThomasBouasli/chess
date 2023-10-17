@@ -65,48 +65,48 @@ mod tests{
     #[test]
     fn test_pawn_can_move_one_square_forward(){
         let pawn = Pawn::new(Color::White);
-        let (valid_moves, valid) = pawn.valid_move(&RelativePosition{file: 0, rank: 1});
-        assert_eq!(valid, true);
-        assert_eq!(valid_moves.len(), 0);
+        let (move_path, valid) = pawn.valid_move(&RelativePosition{file: 0, rank: 1});
+        assert_eq!(valid, true, "Pawn should be able to move one square forward");
+        assert_eq!(move_path.len(), 0, "Valid moves should not contain a paths");
     }
 
     #[test]
     fn test_pawn_can_move_two_squares_forward(){
         let pawn = Pawn::new(Color::White);
-        let (valid_moves, valid) = pawn.valid_move(&RelativePosition{file: 0, rank: 2});
-        assert_eq!(valid, true);
-        assert_eq!(valid_moves.len(), 1);
+        let (move_path, valid) = pawn.valid_move(&RelativePosition{file: 0, rank: 2});
+        assert_eq!(valid, true, "Pawn should be able to move two squares forward");
+        assert_eq!(move_path.len(), 1, "Valid moves should contain a paths");
     }
 
     #[test]
     fn test_pawn_cannot_move_three_squares_forward(){
         let pawn = Pawn::new(Color::White);
-        let (valid_moves, valid) = pawn.valid_move(&RelativePosition{file: 0, rank: 3});
-        assert_eq!(valid, false);
-        assert_eq!(valid_moves.len(), 0);
+        let (move_path, valid) = pawn.valid_move(&RelativePosition{file: 0, rank: 3});
+        assert_eq!(valid, false, "Pawn should not be able to move three squares forward");
+        assert_eq!(move_path.len(), 0, "Invalid moves should not contain a paths");
     }
 
     #[test]
     fn test_pawn_cannot_move_backwards(){
         let pawn = Pawn::new(Color::White);
-        let (valid_moves, valid) = pawn.valid_move(&RelativePosition{file: 0, rank: -1});
-        assert_eq!(valid, false);
-        assert_eq!(valid_moves.len(), 0);
+        let (move_path, valid) = pawn.valid_move(&RelativePosition{file: 0, rank: -1});
+        assert_eq!(valid, false, "Pawn should not be able to move backwards");
+        assert_eq!(move_path.len(), 0, "Invalid moves should not contain a paths");
     }
 
     #[test]
     fn test_pawn_can_capture_diagonally(){
         let pawn = Pawn::new(Color::White);
-        let (valid_moves, valid) = pawn.valid_capture(&RelativePosition{file: 1, rank: 1});
-        assert_eq!(valid, true);
-        assert_eq!(valid_moves.len(), 0);
+        let (move_path, valid) = pawn.valid_capture(&RelativePosition{file: 1, rank: 1});
+        assert_eq!(valid, true, "Pawn should be able to capture diagonally");
+        assert_eq!(move_path.len(), 0, "Moves that are one square of distance should not contain a path");
     }
 
     #[test]
     fn test_pawn_cannot_capture_forward(){
         let pawn = Pawn::new(Color::White);
-        let (valid_moves, valid) = pawn.valid_capture(&RelativePosition{file: 0, rank: 1});
-        assert_eq!(valid, false);
-        assert_eq!(valid_moves.len(), 0);
+        let (move_path, valid) = pawn.valid_capture(&RelativePosition{file: 0, rank: 1});
+        assert_eq!(valid, false, "Pawn should not be able to capture forward");
+        assert_eq!(move_path.len(), 0, "Invalid moves should not contain a paths");
     }
 }

@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use self::square::Square;
 
-use super::{movement::Position, piece::Piece};
+use super::movement::Position;
 
 pub mod square;
 
@@ -10,7 +10,7 @@ pub struct Board{
     tiles: Vec<Vec<square::Square>>,
 }
 
-impl Board{
+impl Board{ 
     pub fn new() -> Self {
         let mut square = Vec::new();
         for _ in 0..8{
@@ -23,10 +23,6 @@ impl Board{
         Board{tiles: square}
     }
 
-    pub fn set_piece(&mut self, piece: Box<dyn Piece>, position: Position){
-        self.tiles[position.file][position.rank].set_piece(piece);
-    }
-
     pub fn get_tile_mut(&mut self, position : &Position) -> &mut Square{
         &mut self.tiles[position.file][position.rank]
     }
@@ -34,7 +30,6 @@ impl Board{
     pub fn get_tile(&self, position : &Position) -> &Square{
         &self.tiles[position.file][position.rank]
     }
-
 }
 
 impl Display for Board{

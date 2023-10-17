@@ -11,6 +11,7 @@ pub struct Queen{
 }
 
 impl DiagonalMovement for Queen{}
+
 impl LineMovement for Queen{}
 
 impl Piece for Queen{

@@ -1,11 +1,11 @@
-use crate::chess::{game::Game, movement::{Movement, self}};
+use crate::chess::{movement::{Movement, self}, game::classic::ClassicGame};
 
 
 
 mod chess;
 
 fn main() {
-    let mut game = Game::new();
+    let mut game = ClassicGame::new();
 
     println!("{}", game.board());
 
@@ -22,6 +22,7 @@ fn main() {
         Movement::new(movement::ChessNotationPosition::new('d', 2).to_position(), movement::ChessNotationPosition::new('d', 3).to_position()),
         Movement::new(movement::ChessNotationPosition::new('f', 7).to_position(), movement::ChessNotationPosition::new('f', 6).to_position()),
         Movement::new(movement::ChessNotationPosition::new('c', 1).to_position(), movement::ChessNotationPosition::new('g', 5).to_position()),
+        Movement::new(movement::ChessNotationPosition::new('f', 6).to_position(), movement::ChessNotationPosition::new('f', 5).to_position()),
     );
 
     for m in moves{

@@ -37,19 +37,20 @@ impl Display for Position {
 }
 
 impl Position {
-    // pub fn from_chess_notation(pos: ChessNotationPosition) -> Self {
-    //     Self {
-    //         file: pos.file as usize - 97,
-    //         rank: pos.rank as usize - 1,
-    //     }
-    // }
 
-    // pub fn to_chess_notation(&self) -> ChessNotationPosition {
-    //     ChessNotationPosition {
-    //         file: (self.file as u8 + 97) as char,
-    //         rank: self.rank as u8 + 1,
-    //     }
-    // }
+    pub fn new(file: usize, rank: usize) -> Self {
+        Self {
+            file,
+            rank,
+        }
+    }
+
+    pub fn to_relative(&self, position: &Position) -> RelativePosition {
+        RelativePosition {
+            file: (self.file as i8 - position.file as i8),
+            rank: (self.rank as i8 - position.rank as i8),
+        }
+    }
 }
 
 pub struct ChessNotationPosition{
