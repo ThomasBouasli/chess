@@ -27,6 +27,10 @@ impl Piece for Knight{
         String::from("N")
     }
 
+    fn icon(&self) -> char{
+        '♘'
+    }
+
     fn valid_move(&self, position: &RelativePosition) -> (Vec<RelativePosition>, bool) {
         if (position.file.abs() == 2 && position.rank.abs() == 1) || (position.file.abs() == 1 && position.rank.abs() == 2){
             (Vec::new(), true)

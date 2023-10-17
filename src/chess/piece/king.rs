@@ -27,6 +27,10 @@ impl Piece for King{
         String::from("K")
     }
 
+    fn icon(&self) -> char{
+        '♔'
+    }
+
     fn valid_move(&self, position: &RelativePosition) -> (Vec<RelativePosition>, bool) {
         (Vec::new(), position.file.abs() <= 1 && position.rank.abs() <= 1)
     }

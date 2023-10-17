@@ -29,6 +29,10 @@ impl Piece for Bishop{
         String::from("B")
     }
 
+    fn icon(&self) -> char{
+        '♗'
+    }
+
     fn valid_move(&self,  position: &RelativePosition) -> (Vec<RelativePosition>, bool) {
         self.diagonal_movement(position)
     }

@@ -13,6 +13,7 @@ pub trait Piece : Display{
     fn new(color: Color) -> Self where Self: Sized;
     fn value(&self) -> u8;
     fn color(&self) -> &Color;
+    fn icon(&self) => char;
     fn prefix(&self) -> String;
     fn valid_move(&self, relative_position: &RelativePosition) -> (Vec<RelativePosition>, bool);
     fn valid_capture(&self, relative_position: &RelativePosition) -> (Vec<RelativePosition>, bool){

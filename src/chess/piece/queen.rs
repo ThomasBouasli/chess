@@ -31,6 +31,10 @@ impl Piece for Queen{
         String::from("Q")
     }
 
+    fn icon(&self) -> char{
+        '♕'
+    }
+
     fn valid_move(&self, position: &RelativePosition) -> (Vec<RelativePosition>, bool) {
         let ( diagonal_path, diagonal_can_move) = self.diagonal_movement(position);
         let ( line_path, line_can_move) = self.line_movement(position);

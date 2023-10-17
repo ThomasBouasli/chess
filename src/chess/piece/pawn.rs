@@ -27,6 +27,11 @@ impl Piece for Pawn{
         String::from("P")
     }
 
+    fn icon(&self) -> char{
+        '♙'
+    }
+
+
     fn valid_move(&self, position : &RelativePosition) -> (Vec<RelativePosition>, bool) {
         if position.file != 0{
             (Vec::new(), false)

@@ -29,6 +29,10 @@ impl Piece for Rook{
         String::from("R")
     }
 
+    fn icon(&self) -> char{
+        '♖'
+    }
+
     fn valid_move(&self, position: &RelativePosition) -> (Vec<RelativePosition>, bool) {
         self.line_movement(position)
     }
