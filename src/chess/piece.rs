@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use super::{color::Color, movement::{RelativePosition, Position}};
+use super::{color::Color, movement::RelativePosition};
 
 pub mod pawn;
 pub mod king;
@@ -14,9 +14,9 @@ pub trait Piece : Display{
     fn value(&self) -> u8;
     fn color(&self) -> &Color;
     fn prefix(&self) -> String;
-    fn valid_move(&self, position: &RelativePosition) -> (Vec<RelativePosition>, bool);
-    fn valid_capture(&self, position: &RelativePosition) -> (Vec<RelativePosition>, bool){
-        self.valid_move(position)
+    fn valid_move(&self, relative_position: &RelativePosition) -> (Vec<RelativePosition>, bool);
+    fn valid_capture(&self, relative_position: &RelativePosition) -> (Vec<RelativePosition>, bool){
+        self.valid_move(relative_position)
     }
     fn multiplier(&self) -> i8 {
         match self.color(){

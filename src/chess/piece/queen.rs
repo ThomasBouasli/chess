@@ -2,13 +2,16 @@ use std::fmt::Display;
 
 use colored::Colorize;
 
-use crate::chess::{color::Color, movement::RelativePosition};
+use crate::chess::{color::Color, movement::{RelativePosition, diagonal::DiagonalMovement, line::LineMovement}};
 
 use super::Piece;
 
 pub struct Queen{
     color: Color,
 }
+
+impl DiagonalMovement for Queen{}
+impl LineMovement for Queen{}
 
 impl Piece for Queen{
     fn new(color: Color) -> Self {
@@ -28,26 +31,15 @@ impl Piece for Queen{
     }
 
     fn valid_move(&self, position: &RelativePosition) -> (Vec<RelativePosition>, bool) {
-        if position.file.abs() == position.rank.abs(){
-            let mut movement_path = Vec::new();
-            for n in 1..=position.file.abs(){
-                movement_path.push(RelativePosition{file: n * position.file.signum(), rank: n * position.rank.signum()});
-            }
+        let ( diagonal_path, diagonal_can_move) = self.diagonal_movement(position);
+        let ( line_path, line_can_move) = self.line_movement(position);
 
-            (movement_path, true)
-        }else if position.file.abs() == 0 || position.rank.abs() == 0{
-            let mut movement_path = Vec::new();
-            for n in 1..=position.file.abs(){
-                movement_path.push(RelativePosition{file: n * self.multiplier(), rank: 0});
-            }
-            for n in 1..=position.rank.abs(){
-                movement_path.push(RelativePosition{file: 0, rank: n * self.multiplier()});
-            }
+        let mut movement_path = Vec::new();
 
-            (movement_path, true)
-        }else{
-            (Vec::new(), false)
-        }
+        movement_path.extend(diagonal_path);
+        movement_path.extend(line_path);
+
+        (movement_path, diagonal_can_move || line_can_move)
     }
 }
 

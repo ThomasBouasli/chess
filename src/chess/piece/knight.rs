@@ -46,3 +46,33 @@ impl Display for Knight {
         .fmt(f)
     }
 }
+
+#[cfg(test)]
+mod tests{
+    use super::*;
+
+    #[test]
+    fn test_knight_valid_move(){
+        let knight = Knight::new(Color::White);
+
+        let (valid_moves, can_move) = knight.valid_move(&RelativePosition{file: 2, rank: 1});
+        assert_eq!(valid_moves, Vec::new());
+        assert_eq!(can_move, true);
+
+        let (valid_moves, can_move) = knight.valid_move(&RelativePosition{file: 1, rank: 2});
+        assert_eq!(valid_moves, Vec::new());
+        assert_eq!(can_move, true);
+
+        let (valid_moves, can_move) = knight.valid_move(&RelativePosition{file: 2, rank: 2});
+        assert_eq!(valid_moves, Vec::new());
+        assert_eq!(can_move, false);
+
+        let (valid_moves, can_move) = knight.valid_move(&RelativePosition{file: 1, rank: 1});
+        assert_eq!(valid_moves, Vec::new());
+        assert_eq!(can_move, false);
+
+        let (valid_moves, can_move) = knight.valid_move(&RelativePosition{file: 0, rank: 0});
+        assert_eq!(valid_moves, Vec::new());
+        assert_eq!(can_move, false);
+    }
+}

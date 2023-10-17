@@ -1,4 +1,4 @@
-use crate::chess::{game::Game, movement::{Movement, self}, board};
+use crate::chess::{game::Game, movement::{Movement, self}};
 
 
 
@@ -26,15 +26,11 @@ fn main() {
 
     for m in moves{
         match game.move_piece(m){
-            Ok(msg) => println!("{}", msg),
             Err(e) => println!("Error: {}", e),
+            _ => (),
         }
 
         println!("{}", game.board());
-
     }
 
-    for mo in game.moves(){
-        println!("{}", mo);
-    }
 }

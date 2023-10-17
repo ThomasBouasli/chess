@@ -30,9 +30,9 @@ impl Piece for Pawn{
     fn valid_move(&self, position : &RelativePosition) -> (Vec<RelativePosition>, bool) {
         if position.file != 0{
             (Vec::new(), false)
-        }else if position.rank.abs() == 1{
+        }else if position.rank == 1 * self.multiplier(){
             (Vec::new(), true)
-        }else if position.rank.abs() == 2{
+        }else if position.rank == 2 * self.multiplier(){
             (vec![RelativePosition {file: 0, rank: 1 * self.multiplier()}], true)
         }else{
             (Vec::new(), false)
@@ -56,5 +56,57 @@ impl Display for Pawn {
             Color::Black => colored::Color::Red,
         })
         .fmt(f)
+    }
+}
+
+mod tests{
+    use super::*;
+
+    #[test]
+    fn test_pawn_can_move_one_square_forward(){
+        let pawn = Pawn::new(Color::White);
+        let (valid_moves, valid) = pawn.valid_move(&RelativePosition{file: 0, rank: 1});
+        assert_eq!(valid, true);
+        assert_eq!(valid_moves.len(), 0);
+    }
+
+    #[test]
+    fn test_pawn_can_move_two_squares_forward(){
+        let pawn = Pawn::new(Color::White);
+        let (valid_moves, valid) = pawn.valid_move(&RelativePosition{file: 0, rank: 2});
+        assert_eq!(valid, true);
+        assert_eq!(valid_moves.len(), 1);
+    }
+
+    #[test]
+    fn test_pawn_cannot_move_three_squares_forward(){
+        let pawn = Pawn::new(Color::White);
+        let (valid_moves, valid) = pawn.valid_move(&RelativePosition{file: 0, rank: 3});
+        assert_eq!(valid, false);
+        assert_eq!(valid_moves.len(), 0);
+    }
+
+    #[test]
+    fn test_pawn_cannot_move_backwards(){
+        let pawn = Pawn::new(Color::White);
+        let (valid_moves, valid) = pawn.valid_move(&RelativePosition{file: 0, rank: -1});
+        assert_eq!(valid, false);
+        assert_eq!(valid_moves.len(), 0);
+    }
+
+    #[test]
+    fn test_pawn_can_capture_diagonally(){
+        let pawn = Pawn::new(Color::White);
+        let (valid_moves, valid) = pawn.valid_capture(&RelativePosition{file: 1, rank: 1});
+        assert_eq!(valid, true);
+        assert_eq!(valid_moves.len(), 0);
+    }
+
+    #[test]
+    fn test_pawn_cannot_capture_forward(){
+        let pawn = Pawn::new(Color::White);
+        let (valid_moves, valid) = pawn.valid_capture(&RelativePosition{file: 0, rank: 1});
+        assert_eq!(valid, false);
+        assert_eq!(valid_moves.len(), 0);
     }
 }

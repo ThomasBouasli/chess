@@ -1,5 +1,9 @@
 use std::fmt::Display;
 
+pub mod line;
+pub mod diagonal;
+
+#[derive(PartialEq, Debug)]
 pub struct RelativePosition{
     pub file: i8,
     pub rank: i8,
@@ -33,19 +37,19 @@ impl Display for Position {
 }
 
 impl Position {
-    pub fn from_chess_notation(pos: ChessNotationPosition) -> Self {
-        Self {
-            file: pos.file as usize - 97,
-            rank: pos.rank as usize - 1,
-        }
-    }
+    // pub fn from_chess_notation(pos: ChessNotationPosition) -> Self {
+    //     Self {
+    //         file: pos.file as usize - 97,
+    //         rank: pos.rank as usize - 1,
+    //     }
+    // }
 
-    pub fn to_chess_notation(&self) -> ChessNotationPosition {
-        ChessNotationPosition {
-            file: (self.file as u8 + 97) as char,
-            rank: self.rank as u8 + 1,
-        }
-    }
+    // pub fn to_chess_notation(&self) -> ChessNotationPosition {
+    //     ChessNotationPosition {
+    //         file: (self.file as u8 + 97) as char,
+    //         rank: self.rank as u8 + 1,
+    //     }
+    // }
 }
 
 pub struct ChessNotationPosition{
@@ -61,12 +65,12 @@ impl ChessNotationPosition {
         }
     }
 
-    pub fn from_position(pos: Position) -> Self {
-        Self {
-            file: (pos.file as u8 + 97) as char,
-            rank: pos.rank as u8 + 1,
-        }
-    }
+    // pub fn from_position(pos: Position) -> Self {
+    //     Self {
+    //         file: (pos.file as u8 + 97) as char,
+    //         rank: pos.rank as u8 + 1,
+    //     }
+    // }
 
     pub fn to_position(&self) -> Position {
         Position {
