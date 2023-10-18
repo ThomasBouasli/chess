@@ -2,13 +2,13 @@ use std::fmt::Display;
 
 use crate::chess::piece::Piece;
 
-pub struct Square{
+pub struct Tile{
     piece: Option<Box<dyn Piece>>,
 }
 
-impl Square{
+impl Tile{
     pub fn new() -> Self {
-        Square{piece: None}
+        Tile{piece: None}
     }
 
     pub fn set_piece(&mut self, piece: Box<dyn Piece>){
@@ -24,7 +24,7 @@ impl Square{
     }
 }
 
-impl Display for Square{
+impl Display for Tile{
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.piece{
             Some(piece) => write!(f, "{}", piece),

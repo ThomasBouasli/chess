@@ -52,10 +52,12 @@ impl Game{
     }
 
     fn make_move(&mut self, movement: Movement) -> Result<(), String>{
-        let piece = match self.board.get_tile_mut(movement.from()).remove_piece(){
+        let mut piece = match self.board.get_tile_mut(movement.from()).remove_piece(){
             Some(piece) => piece,
             None => return Err(String::from("No piece on tile!")),
         };
+
+        piece.moved();
 
         self.board.get_tile_mut(movement.to()).set_piece(piece);
 

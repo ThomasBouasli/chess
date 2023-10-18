@@ -2,6 +2,7 @@ use std::fmt::Display;
 
 pub mod line;
 pub mod diagonal;
+pub mod generate_valid_moves;
 
 #[derive(PartialEq, Debug)]
 pub struct RelativePosition{

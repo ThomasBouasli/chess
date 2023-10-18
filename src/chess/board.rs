@@ -1,33 +1,33 @@
 use std::fmt::Display;
 
-use self::square::Square;
+use self::tile::Tile;
 
 use super::movement::Position;
 
-pub mod square;
+pub mod tile;
 
 pub struct Board{
-    tiles: Vec<Vec<square::Square>>,
+    tiles: Vec<Vec<tile::Tile>>,
 }
 
 impl Board{ 
     pub fn new() -> Self {
-        let mut square = Vec::new();
+        let mut tile = Vec::new();
         for _ in 0..8{
             let mut rank = Vec::new();
             for _ in 0..8{
-                rank.push(square::Square::new());
+                rank.push(tile::Tile::new());
             }
-            square.push(rank);
+            tile.push(rank);
         }
-        Board{tiles: square}
+        Board{tiles: tile}
     }
 
-    pub fn get_tile_mut(&mut self, position : &Position) -> &mut Square{
+    pub fn get_tile_mut(&mut self, position : &Position) -> &mut Tile{
         &mut self.tiles[position.file][position.rank]
     }
 
-    pub fn get_tile(&self, position : &Position) -> &Square{
+    pub fn get_tile(&self, position : &Position) -> &Tile{
         &self.tiles[position.file][position.rank]
     }
 }

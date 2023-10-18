@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use colored::Colorize;
 
-use crate::chess::{color::Color, movement::{RelativePosition, diagonal::DiagonalMovement}};
+use crate::chess::{color::Color, movement::{RelativePosition, diagonal::DiagonalMovement, generate_valid_moves::GenerateValidMoves}};
 
 use super::Piece;
 
@@ -37,6 +37,13 @@ impl Piece for Bishop{
         self.diagonal_movement(position)
     }
 }
+
+impl GenerateValidMoves for Bishop{
+    fn generate_valid_moves(&self) -> Vec<RelativePosition>{
+        return vec![RelativePosition {file : 1, rank : 1}];
+    }
+}
+
 
 impl Display for Bishop {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

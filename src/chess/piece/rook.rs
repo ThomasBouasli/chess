@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use colored::Colorize;
 
-use crate::chess::{color::Color, movement::{RelativePosition, line::LineMovement}};
+use crate::chess::{color::Color, movement::{RelativePosition, line::LineMovement,generate_valid_moves::GenerateValidMoves}};
 
 use super::Piece;
 
@@ -37,6 +37,13 @@ impl Piece for Rook{
         self.line_movement(position)
     }
 }
+
+impl GenerateValidMoves for Rook{
+    fn generate_valid_moves(&self) -> Vec<RelativePosition>{
+        return vec![RelativePosition {file : 1, rank : 1}];
+    }
+}
+
 
 impl Display for Rook {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

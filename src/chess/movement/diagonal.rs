@@ -28,7 +28,7 @@ mod tests{
     impl DiagonalMovement for TestStruct{}
 
     #[test]
-    fn test_can_move_vertically_one_square(){
+    fn test_can_move_vertically_one_tile(){
         let test_struct = TestStruct;
         let relative_position = RelativePosition{file: 1, rank: 1};
         let (movement_path, can_move) = test_struct.diagonal_movement(&relative_position);
@@ -46,7 +46,7 @@ mod tests{
     }
 
     #[test]
-    fn test_can_move_any_number_of_squares(){
+    fn test_can_move_any_number_of_tiles(){
         let test_struct = TestStruct;
         let relative_position = RelativePosition{file: 5, rank: -5};
         let (movement_path, can_move) = test_struct.diagonal_movement(&relative_position);
@@ -61,5 +61,13 @@ mod tests{
         assert_eq!(movement_path, expected_vector);
         assert_eq!(can_move, true);
     }
-    
+
+    #[test]
+    fn test_cannot_move_in_line(){
+        let test_struct = TestStruct;
+        let relative_position = RelativePosition{file: 0, rank: 1};
+        let (movement_path, can_move) = test_struct.diagonal_movement(&relative_position);
+        assert_eq!(movement_path, Vec::new());
+        assert_eq!(can_move, false);
+    }
 }

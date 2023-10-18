@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use colored::Colorize;
 
-use crate::chess::{color::Color, movement::RelativePosition};
+use crate::chess::{color::Color, movement::{RelativePosition, generate_valid_moves::GenerateValidMoves}};
 
 use super::Piece;
 
@@ -39,6 +39,13 @@ impl Piece for Knight{
         }
     }
 }
+
+impl GenerateValidMoves for Knight{
+    fn generate_valid_moves(&self) -> Vec<RelativePosition>{
+        return vec![RelativePosition {file : 1, rank : 1}];
+    }
+}
+
 
 impl Display for Knight {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

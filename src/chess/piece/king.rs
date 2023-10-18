@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use colored::Colorize;
 
-use crate::chess::{color::Color, movement::RelativePosition};
+use crate::chess::{color::Color, movement::{RelativePosition, generate_valid_moves::GenerateValidMoves}};
 
 use super::Piece;
 
@@ -36,6 +36,13 @@ impl Piece for King{
     }
 }
 
+impl GenerateValidMoves for King{
+    fn generate_valid_moves(&self) -> Vec<RelativePosition>{
+        return vec![RelativePosition {file : 1, rank : 1}];
+    }
+}
+
+
 impl Display for King {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         format!(" {} ", self.prefix())
@@ -52,7 +59,7 @@ mod tests{
     use super::*;
 
     #[test]
-    fn it_should_only_move_to_adjacent_squares(){
+    fn it_should_only_move_to_adjacent_tiles(){
         let king = King::new(Color::White);
 
         let mut adjacent_positions = Vec::new();
@@ -71,7 +78,7 @@ mod tests{
     }
 
     #[test]
-    fn it_should_not_move_to_distant_squares(){
+    fn it_should_not_move_to_distant_tiles(){
         let king = King::new(Color::White);
 
         let mut distant_positions = Vec::new();
