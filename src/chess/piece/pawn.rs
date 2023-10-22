@@ -2,41 +2,53 @@ use std::fmt::Display;
 
 use colored::Colorize;
 
-use crate::chess::{color::Color, movement::{RelativePosition,generate_valid_moves::GenerateValidMoves}};
+use crate::chess::{color::Color, movement::{generate_valid_moves::GenerateValidMoves, relative_position::RelativePosition}};
 
-use super::Piece;
+
+#[derive(Clone)]
 
 pub struct Pawn{
     color: Color,
     is_first_move : bool,
 }
 
-impl Piece for Pawn{
-    fn new(color: Color) -> Self {
+impl Pawn{
+    pub fn new(color: Color) -> Self {
         Pawn{color, is_first_move : true}
     }
 
-    fn color(&self) -> &Color {
+    pub fn color(&self) -> &Color {
         &self.color
     }
 
-    fn value(&self) -> u8 {
+    pub fn value(&self) -> u8 {
         1
     }
 
-    fn prefix(&self) -> String {
-        String::from("P")
+    pub fn prefix(&self) -> char {
+        'P'
     }
 
-    fn icon(&self) -> char{
+    pub fn icon(&self) -> char{
         '♙'
     }
 
-    fn moved(&mut self){
+    pub fn moved(&mut self){
         self.is_first_move = false;
     }
 
-    fn valid_move(&self, position : &RelativePosition) -> (Vec<RelativePosition>, bool) {
+    pub fn undo_moved(&mut self){
+        self.is_first_move = true;
+    }
+
+    pub fn multiplier(&self) -> i8{
+        match self.color{
+            Color::White => 1,
+            Color::Black => -1,
+        }
+    }
+
+    pub fn valid_move(&self, position : &RelativePosition) -> (Vec<RelativePosition>, bool) {
         if position.file != 0{
             (Vec::new(), false)
         }else if position.rank == 1 * self.multiplier(){
@@ -48,7 +60,7 @@ impl Piece for Pawn{
         }
     }
 
-    fn valid_capture(&self, position : &RelativePosition) -> (Vec<RelativePosition>, bool) {
+    pub fn valid_capture(&self, position : &RelativePosition) -> (Vec<RelativePosition>, bool) {
         if position.file.abs() == 1 && position.rank == 1{
             (Vec::new(), true)
         }else{
@@ -59,19 +71,35 @@ impl Piece for Pawn{
 
 impl GenerateValidMoves for Pawn{
     fn generate_valid_moves(&self) -> Vec<RelativePosition>{
-        return vec![RelativePosition {file : 1, rank : 1}];
+        let mut moves = Vec::new();
+
+        moves.push(RelativePosition{file: 0, rank: 1 * self.multiplier()});
+
+        if self.is_first_move{
+            moves.push(RelativePosition{file: 0, rank: 2 * self.multiplier()});
+        }
+
+        moves.push(RelativePosition{file: 1, rank: 1 * self.multiplier()});
+        moves.push(RelativePosition{file: -1, rank: 1 * self.multiplier()});
+
+        moves
     }
 }
 
 
 impl Display for Pawn {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        format!(" {} ", self.prefix())
-        .color(match self.color(){
-            Color::White => colored::Color::Green,
-            Color::Black => colored::Color::Red,
-        })
-        .fmt(f)
+        match self.color() {
+            Color::White => {
+                format!(" {} ", self.icon())
+                .fmt(f)
+            },
+            Color::Black => {
+                format!(" {} ", self.icon())
+                .yellow()
+                .fmt(f)
+            }
+        }
     }
 }
 
@@ -136,5 +164,39 @@ mod tests{
         let (move_path, valid) = pawn.valid_capture(&RelativePosition{file: 0, rank: 1});
         assert_eq!(valid, false, "Pawn should not be able to capture forward");
         assert_eq!(move_path.len(), 0, "Invalid moves should not contain a paths");
+    }
+
+
+    #[test]
+    fn test_generated_moves_should_be_valid(){
+        let pawn = Pawn::new(Color::White);
+
+        let generated_moves = pawn.generate_valid_moves();
+
+        for movement in generated_moves{
+            assert!(pawn.valid_move(&movement).1 || pawn.valid_capture(&movement).1);
+        }
+    }
+
+    #[test]
+    fn test_if_there_are_not_any_missing_valid_moves(){
+        let pawn = Pawn::new(Color::White);
+
+        let generated_moves = pawn.generate_valid_moves();
+
+        let mut possible_moves = Vec::new();
+
+        for file in -7i8..=7{
+            for rank in -7i8..=7{
+                let (_, valid) = pawn.valid_move(&RelativePosition{file, rank});
+                if valid{
+                    possible_moves.push(RelativePosition{file, rank});
+                }
+            }
+        }
+
+        for position in possible_moves{
+            assert!(generated_moves.contains(&position), "Missing move: {:?}", position);
+        }
     }
 }

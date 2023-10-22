@@ -1,37 +1,66 @@
-use crate::chess::{movement::{Movement, self}, game::classic::ClassicGame};
-
-
+use crate::chess::{movement::{Movement, chess_notation::ChessNotationPosition}, game::{classic::ClassicGame, GameState}};
 
 mod chess;
 
 fn main() {
     let mut game = ClassicGame::new();
 
-    println!("{}", game.board());
-
-    
-    let moves = vec!(
-        Movement::new(movement::ChessNotationPosition::new('e', 2).to_position(), movement::ChessNotationPosition::new('e', 4).to_position()),
-        Movement::new(movement::ChessNotationPosition::new('e', 7).to_position(), movement::ChessNotationPosition::new('e', 5).to_position()),
-        Movement::new(movement::ChessNotationPosition::new('g', 1).to_position(), movement::ChessNotationPosition::new('f', 3).to_position()),
-        Movement::new(movement::ChessNotationPosition::new('b', 8).to_position(), movement::ChessNotationPosition::new('c', 6).to_position()),
-        Movement::new(movement::ChessNotationPosition::new('f', 1).to_position(), movement::ChessNotationPosition::new('c', 4).to_position()),
-        Movement::new(movement::ChessNotationPosition::new('d', 7).to_position(), movement::ChessNotationPosition::new('d', 6).to_position()),
-        Movement::new(movement::ChessNotationPosition::new('c', 4).to_position(), movement::ChessNotationPosition::new('f', 7).to_position()),
-        Movement::new(movement::ChessNotationPosition::new('e', 8).to_position(), movement::ChessNotationPosition::new('f', 7).to_position()),
-        Movement::new(movement::ChessNotationPosition::new('d', 2).to_position(), movement::ChessNotationPosition::new('d', 3).to_position()),
-        Movement::new(movement::ChessNotationPosition::new('f', 7).to_position(), movement::ChessNotationPosition::new('f', 6).to_position()),
-        Movement::new(movement::ChessNotationPosition::new('c', 1).to_position(), movement::ChessNotationPosition::new('g', 5).to_position()),
-        Movement::new(movement::ChessNotationPosition::new('f', 6).to_position(), movement::ChessNotationPosition::new('f', 5).to_position()),
-    );
-
-    for m in moves{
-        match game.move_piece(m){
-            Err(e) => println!("Error: {}", e),
-            _ => (),
+    loop {
+        print!("\x1B[2J\x1B[1;1H");
+        println!("{}", game.board());
+        println!("It's {}'s turn", game.turn());
+        let movement = ask_for_movement();
+        match game.move_piece(movement) {
+            Ok(_) => (),
+            Err(error) => println!("{}", error),
         }
 
-        println!("{}", game.board());
+        match game.state() {
+            GameState::Check(_) => {
+                println!("Check!");
+            }
+            GameState::Checkmate(color) => {
+                let opposite_color = match color {
+                    chess::color::Color::White => chess::color::Color::Black,
+                    chess::color::Color::Black => chess::color::Color::White,
+                };
+
+                println!("Checkmate! {} wins!", opposite_color);
+                break;
+            }
+            GameState::Stalemate => {
+                println!("Stalemate!");
+                break;
+            }
+            _ => (),
+        }
     }
 
+
+}
+
+
+fn ask_for_movement() -> Movement{
+    let mut movement = String::new();
+    println!("Please enter your movement: ");
+    std::io::stdin().read_line(&mut movement).expect("Failed to read line");
+    let movement = movement.trim();
+    
+    let from = match ChessNotationPosition::from_str(&movement[0..2]) {
+        Ok(position) => position,
+        Err(error) => {
+            println!("{}", error);
+            return ask_for_movement();
+        }
+    };
+
+    let to = match ChessNotationPosition::from_str(&movement[2..4]) {
+        Ok(position) => position,
+        Err(error) => {
+            println!("{}", error);
+            return ask_for_movement();
+        }
+    };
+
+    Movement::new(from.to_position(), to.to_position())
 }

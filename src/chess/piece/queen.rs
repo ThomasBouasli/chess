@@ -2,9 +2,10 @@ use std::fmt::Display;
 
 use colored::Colorize;
 
-use crate::chess::{color::Color, movement::{RelativePosition, diagonal::DiagonalMovement, line::LineMovement, generate_valid_moves::GenerateValidMoves}};
+use crate::chess::{color::Color, movement::{ diagonal::DiagonalMovement, line::LineMovement, generate_valid_moves::GenerateValidMoves, relative_position::RelativePosition}};
 
-use super::Piece;
+
+#[derive(Clone)]
 
 pub struct Queen{
     color: Color,
@@ -14,28 +15,28 @@ impl DiagonalMovement for Queen{}
 
 impl LineMovement for Queen{}
 
-impl Piece for Queen{
-    fn new(color: Color) -> Self {
+impl Queen{
+    pub fn new(color: Color) -> Self {
         Queen{color}
     }
 
-    fn color(&self) -> &Color {
+    pub fn color(&self) -> &Color {
         &self.color
     }
 
-    fn value(&self) -> u8 {
+    pub fn value(&self) -> u8 {
         9
     }
 
-    fn prefix(&self) -> String {
-        String::from("Q")
+    pub fn prefix(&self) -> char {
+        'Q'
     }
 
-    fn icon(&self) -> char{
+    pub fn icon(&self) -> char{
         '♕'
     }
 
-    fn valid_move(&self, position: &RelativePosition) -> (Vec<RelativePosition>, bool) {
+    pub fn valid_move(&self, position: &RelativePosition) -> (Vec<RelativePosition>, bool) {
         let ( diagonal_path, diagonal_can_move) = self.diagonal_movement(position);
         let ( line_path, line_can_move) = self.line_movement(position);
 
@@ -47,6 +48,9 @@ impl Piece for Queen{
         (movement_path, diagonal_can_move || line_can_move)
     }
 
+    pub fn valid_capture(&self,  position: &RelativePosition) -> (Vec<RelativePosition>, bool) {
+        self.valid_move(position)
+    }
 }
 
 impl GenerateValidMoves for Queen{
@@ -70,12 +74,17 @@ impl GenerateValidMoves for Queen{
 
 impl Display for Queen {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        format!(" {} ", self.prefix())
-        .color(match self.color(){
-            Color::White => colored::Color::Green,
-            Color::Black => colored::Color::Red,
-        })
-        .fmt(f)
+                match self.color() {
+            Color::White => {
+                format!(" {} ", self.icon())
+                .fmt(f)
+            },
+            Color::Black => {
+                format!(" {} ", self.icon())
+                .yellow()
+                .fmt(f)
+            }
+        }
     }
 }
 
@@ -110,6 +119,39 @@ mod tests{
 
         for unexpected_move in &unexpected_moves {
             assert!(!valid_moves.contains(unexpected_move), "Unexpected move found: {:?}", unexpected_move);
+        }
+    }
+
+    #[test]
+    fn test_generated_moves_should_be_valid(){
+        let queen = Queen::new(Color::White);
+
+        let generated_moves = queen.generate_valid_moves();
+
+        for movement in generated_moves{
+            assert!(queen.valid_move(&movement).1 || queen.valid_capture(&movement).1);
+        }
+    }
+
+    #[test]
+    fn test_if_there_are_not_any_missing_valid_moves(){
+        let queen = Queen::new(Color::White);
+
+        let generated_moves = queen.generate_valid_moves();
+
+        let mut possible_moves = Vec::new();
+
+        for file in -7i8..=7{
+            for rank in -7i8..=7{
+                let (_, valid) = queen.valid_move(&RelativePosition{file, rank});
+                if valid{
+                    possible_moves.push(RelativePosition{file, rank});
+                }
+            }
+        }
+
+        for position in possible_moves{
+            assert!(generated_moves.contains(&position), "Missing move: {:?}", position);
         }
     }
 }

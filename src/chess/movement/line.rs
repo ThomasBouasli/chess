@@ -1,4 +1,5 @@
-use super::RelativePosition;
+use super::relative_position::RelativePosition;
+
 
 pub trait LineMovement {
     fn horizontal_movement(&self, relative_position: &RelativePosition) -> (Vec<RelativePosition>, bool) {
@@ -47,7 +48,7 @@ pub trait LineMovement {
 
 #[cfg(test)]
 mod tests{
-    use crate::chess::movement::RelativePosition;
+    use crate::chess::movement::relative_position::RelativePosition;
 
     use super::*;
 

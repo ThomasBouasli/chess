@@ -1,4 +1,5 @@
-use super::RelativePosition;
+use super::relative_position::RelativePosition;
+
 
 pub trait DiagonalMovement {
     fn diagonal_movement(&self, relative_position: &RelativePosition) -> (Vec<RelativePosition>, bool) {

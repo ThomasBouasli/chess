@@ -2,55 +2,74 @@ use std::fmt::Display;
 
 use colored::Colorize;
 
-use crate::chess::{color::Color, movement::{RelativePosition, generate_valid_moves::GenerateValidMoves}};
+use crate::chess::{color::Color, movement::{ generate_valid_moves::GenerateValidMoves, relative_position::RelativePosition}};
 
-use super::Piece;
+#[derive(Clone)]
 
 pub struct King{
     color: Color,
 }
 
-impl Piece for King{
-    fn new(color: Color) -> Self {
+impl King{
+    pub fn new(color: Color) -> Self {
         King{color}
     }
 
-    fn color(&self) -> &Color {
+    pub fn color(&self) -> &Color {
         &self.color
     }
 
-    fn value(&self) -> u8 {
-        0
+    pub fn value(&self) -> u8 {
+        255
     }
 
-    fn prefix(&self) -> String {
-        String::from("K")
+    pub fn prefix(&self) -> char {
+        'K'
     }
 
-    fn icon(&self) -> char{
+    pub fn icon(&self) -> char{
         '♔'
     }
 
-    fn valid_move(&self, position: &RelativePosition) -> (Vec<RelativePosition>, bool) {
-        (Vec::new(), position.file.abs() <= 1 && position.rank.abs() <= 1)
+    pub fn valid_move(&self, position: &RelativePosition) -> (Vec<RelativePosition>, bool) {
+        (Vec::new(), position.file.abs() <= 1 && position.rank.abs() <= 1 && (position.file != 0 || position.rank != 0))
+    }
+
+    pub fn valid_capture(&self,  position: &RelativePosition) -> (Vec<RelativePosition>, bool) {
+        self.valid_move(position)
     }
 }
 
 impl GenerateValidMoves for King{
     fn generate_valid_moves(&self) -> Vec<RelativePosition>{
-        return vec![RelativePosition {file : 1, rank : 1}];
+        let mut moves = Vec::new();
+
+        for file in -1i8..=1{
+            for rank in -1i8..=1{
+                if file != 0 || rank != 0{
+                    moves.push(RelativePosition{file, rank});
+                }
+            }
+        }
+
+        moves
     }
 }
 
 
 impl Display for King {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        format!(" {} ", self.prefix())
-        .color(match self.color(){
-            Color::White => colored::Color::Green,
-            Color::Black => colored::Color::Red,
-        })
-        .fmt(f)
+                match self.color() {
+            Color::White => {
+                format!(" {} ", self.icon())
+                .fmt(f)
+            },
+            Color::Black => {
+                format!(" {} ", self.icon())
+                .yellow()
+                .fmt(f)
+            }
+        }
     }
 }
 
@@ -66,7 +85,9 @@ mod tests{
 
         for file in -1..=1{
             for rank in -1..=1{
-                adjacent_positions.push(RelativePosition{file, rank});
+                if file != 0 || rank != 0{
+                    adjacent_positions.push(RelativePosition{file, rank});
+                }
             }
         }
 
@@ -96,6 +117,39 @@ mod tests{
             assert_eq!(valid_movement, false);
             assert_eq!(movement_path.len(), 0);
         }
+    }
 
+
+    #[test]
+    fn test_generated_moves_should_be_valid(){
+        let king = King::new(Color::White);
+
+        let generated_moves = king.generate_valid_moves();
+
+        for movement in generated_moves{
+            assert!(king.valid_move(&movement).1 || king.valid_capture(&movement).1);
+        }
+    }
+
+    #[test]
+    fn test_if_there_are_not_any_missing_valid_moves(){
+        let king = King::new(Color::White);
+
+        let generated_moves = king.generate_valid_moves();
+
+        let mut possible_moves = Vec::new();
+
+        for file in -7i8..=7{
+            for rank in -7i8..=7{
+                let (_, valid) = king.valid_move(&RelativePosition{file, rank});
+                if valid{
+                    possible_moves.push(RelativePosition{file, rank});
+                }
+            }
+        }
+
+        for position in possible_moves{
+            assert!(generated_moves.contains(&position), "Missing move: {:?}", position);
+        }
     }
 }
