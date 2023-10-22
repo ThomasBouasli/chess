@@ -22,13 +22,6 @@ impl ChessNotationPosition {
         }
     }
 
-    pub fn from_position(position: AbsolutePosition) -> Self {
-        Self {
-            file: (position.file as u8 + 97) as char,
-            rank: (position.rank as u8 + 1) as u8,
-        }
-    }
-
     pub fn from_str(string: &str) -> Result<Self, String> {
         if string.len() != 2 {
             return Err(String::from("Invalid string length"));

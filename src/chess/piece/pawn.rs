@@ -103,6 +103,7 @@ impl Display for Pawn {
     }
 }
 
+#[cfg(test)]
 mod tests{
     use super::*;
 

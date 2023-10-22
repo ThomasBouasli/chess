@@ -37,30 +37,52 @@ impl Game{
     pub fn turn(&self) -> &Color{
         &self.turn
     }
-
-    pub fn moves(&self) -> &Vec<Movement>{
-        &self.moves
-    }
     
+
+    /// Returns the current state of the game
+    /// 
+    /// ### Returns
+    /// 
+    /// * `GameState::Check(color)` - If the current player is in check
+    /// * `GameState::Checkmate(color)` - If the current player is in checkmate
+    /// * `GameState::Stalemate` - If the game is in stalemate
+    /// * `GameState::InProgress` - If the game is in progress
+    /// 
     pub fn state(&self) -> &GameState{
         &self.state
     }
 
-    pub fn get_points(&self, color: &Color) -> u8{
-        let mut points = 0;
 
-        for (tile, _) in self.board.get_tiles(){
-            if let Some(piece) = tile.get_piece(){
-                if piece.color() == color{
-                    points += piece.value();
-                }
-            }
-        }
-
-        points
-    }
-
+    /// Moves a piece on the board
+    /// 
+    /// ### Arguments
+    /// 
+    /// * `movement` - The movement to be made
+    /// 
+    /// ### Returns
+    /// 
+    /// Returns a Result containing a reference to the game state if the move was successful, otherwise an error message
+    /// 
+    /// ## Examples
+    /// 
+    /// ```
+    /// use chess::{game::classic::ClassicGame, movement::chess_notation::ChessNotationPosition};
+    /// 
+    /// let mut game = ClassicGame::new();
+    /// 
+    /// let movement = Movement::new(ChessNotationPosition::new('e', 2).to_position(), ChessNotationPosition::new('e', 4).to_position());
+    /// 
+    /// let result = match game.move_piece(movement){
+    ///    Ok(state) => state,
+    ///    Err(e) => panic!(e),
+    /// }; // GameState::InProgress
+    /// 
+    /// do_something_fun_with(result);
+    /// 
+    /// ```
     pub fn move_piece(&mut self, movement: Movement) -> Result<&GameState, String>{
+        self.state = GameState::InProgress;
+
         if let Err(e) = self.is_legal_play(&movement){
             return Err(e);
         }
@@ -77,14 +99,36 @@ impl Game{
             self.state = GameState::Check(color);
         }
 
-        if let Some(color) = game.is_check_mate(){
-            self.state = GameState::Checkmate(color);
+        if let Some(state) = game.is_check_mate(){
+            self.state = state;
         }
         
         match self.make_move(movement){
             Ok(_) => Ok(&self.state),
             Err(e) => Err(e),
         }
+    }
+
+    /// Returns the value of the pieces on the board for each player
+    /// 
+    /// ### Returns
+    /// 
+    /// * `(white_value, black_value)` - The value of the pieces for each player
+    pub fn get_values(&self) -> (i32, i32){
+        let mut white_value : i32 = 0;
+        let mut black_value : i32 = 0;
+
+        for (tile, _) in self.board.get_tiles(){
+            if let Some(piece) = tile.get_piece(){
+                if piece.color() == &Color::White{
+                    white_value += piece.value() as i32;
+                }else{
+                    black_value += piece.value() as i32;
+                }
+            }
+        }
+
+        (white_value, black_value)
     }
 
     fn make_move(&mut self, movement: Movement) -> Result<(), String>{
@@ -228,11 +272,15 @@ impl Game{
         false   
     }
 
-    fn is_check_mate(&self) -> Option<Color>{
+    fn is_check_mate(&self) -> Option<GameState>{
         let legal_moves = self.generate_legal_move(&self.turn());
 
         if legal_moves.len() == 0{
-            return Some(*self.turn());
+            if let Some(color) = self.is_check(){
+                return Some(GameState::Checkmate(color));
+            }
+
+            return Some(GameState::Stalemate);
         }
 
         None
@@ -452,4 +500,61 @@ mod tests{
 
         assert_eq!(game.state(), &GameState::Checkmate(Color::White));
     }
+
+    #[test]
+    fn test_can_detect_stalemate(){
+        let mut game = ClassicGame::new();
+
+        let mut moves = Vec::new();
+
+        moves.push(Movement::new(ChessNotationPosition::new('e', 2).to_position(), ChessNotationPosition::new('e', 3).to_position()));
+        moves.push(Movement::new(ChessNotationPosition::new('a', 7).to_position(), ChessNotationPosition::new('a', 5).to_position()));
+        moves.push(Movement::new(ChessNotationPosition::new('d', 1).to_position(), ChessNotationPosition::new('h', 5).to_position()));
+        moves.push(Movement::new(ChessNotationPosition::new('a', 8).to_position(), ChessNotationPosition::new('a', 6).to_position()));
+        moves.push(Movement::new(ChessNotationPosition::new('h', 5).to_position(), ChessNotationPosition::new('a', 5).to_position()));
+        moves.push(Movement::new(ChessNotationPosition::new('h', 7).to_position(), ChessNotationPosition::new('h', 5).to_position()));
+        moves.push(Movement::new(ChessNotationPosition::new('h', 2).to_position(), ChessNotationPosition::new('h', 4).to_position()));
+        moves.push(Movement::new(ChessNotationPosition::new('a', 6).to_position(), ChessNotationPosition::new('h', 6).to_position()));
+        moves.push(Movement::new(ChessNotationPosition::new('a', 5).to_position(), ChessNotationPosition::new('c', 7).to_position()));
+        moves.push(Movement::new(ChessNotationPosition::new('f', 7).to_position(), ChessNotationPosition::new('f', 6).to_position()));
+        moves.push(Movement::new(ChessNotationPosition::new('c', 7).to_position(), ChessNotationPosition::new('d', 7).to_position()));
+        moves.push(Movement::new(ChessNotationPosition::new('e', 8).to_position(), ChessNotationPosition::new('f', 7).to_position()));
+        moves.push(Movement::new(ChessNotationPosition::new('d', 7).to_position(), ChessNotationPosition::new('b', 7).to_position()));
+        moves.push(Movement::new(ChessNotationPosition::new('d', 8).to_position(), ChessNotationPosition::new('d', 3).to_position()));
+        moves.push(Movement::new(ChessNotationPosition::new('b', 7).to_position(), ChessNotationPosition::new('b', 8).to_position()));
+        moves.push(Movement::new(ChessNotationPosition::new('d', 3).to_position(), ChessNotationPosition::new('h', 7).to_position()));
+        moves.push(Movement::new(ChessNotationPosition::new('b', 8).to_position(), ChessNotationPosition::new('c', 8).to_position()));
+        moves.push(Movement::new(ChessNotationPosition::new('f', 7).to_position(), ChessNotationPosition::new('g', 6).to_position()));
+        moves.push(Movement::new(ChessNotationPosition::new('c', 8).to_position(), ChessNotationPosition::new('e', 6).to_position()));
+
+        for (i, movement) in moves.iter().enumerate(){
+            if i == moves.len() - 1{
+                let state = game.state().clone();
+                assert_eq!(game.move_piece(movement.clone()), Ok(&GameState::Stalemate), "State is not stalemate, it is {:?}", state);
+            }else{
+                game.move_piece(movement.clone()).unwrap();
+            }
+        }
+    }
+
+    #[test]
+    fn test_can_get_accurate_values(){
+        let mut game = ClassicGame::new();
+
+        let m1 = Movement::new(ChessNotationPosition::new('e', 2).to_position(), ChessNotationPosition::new('e', 4).to_position());
+        let m2 = Movement::new(ChessNotationPosition::new('f', 7).to_position(), ChessNotationPosition::new('f', 5).to_position());
+        let m3 = Movement::new(ChessNotationPosition::new('e', 4).to_position(), ChessNotationPosition::new('f', 5).to_position());
+
+        assert_eq!(game.get_values(), (39, 39));
+
+
+        assert_eq!(game.move_piece(m1), Ok(&GameState::InProgress));
+        assert_eq!(game.get_values(), (39, 39));
+
+        assert_eq!(game.move_piece(m2), Ok(&GameState::InProgress));
+        assert_eq!(game.get_values(), (39, 39));
+
+        assert_eq!(game.move_piece(m3), Ok(&GameState::InProgress));
+        assert_eq!(game.get_values(), (39, 38));
+    } 
 }

@@ -20,7 +20,7 @@ impl King{
     }
 
     pub fn value(&self) -> u8 {
-        255
+        0
     }
 
     pub fn prefix(&self) -> char {
