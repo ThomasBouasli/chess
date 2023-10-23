@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use self::{knight::Knight, bishop::Bishop, rook::Rook, pawn::Pawn, queen::Queen, king::King};
 
-use super::movement::generate_valid_moves::GenerateValidMoves;
+use super::movement::{generate_valid_moves::GenerateValidMoves, relative_position::RelativePosition};
 
 
 pub mod pawn;
@@ -77,6 +77,20 @@ impl Piece {
         }
     }
 
+    pub fn castle_queen_side(&self, position : &RelativePosition) -> (Vec<RelativePosition>, bool) {
+        match self{
+            Piece::King{piece} => piece.castle_queen_side(position),
+            _ => (Vec::new(), false),
+        }
+    }
+
+    pub fn castle_king_side(&self, position : &RelativePosition) -> (Vec<RelativePosition>, bool) {
+        match self{
+            Piece::King{piece} => piece.castle_king_side(position),
+            _ => (Vec::new(), false),
+        }
+    }
+
     pub fn valid_move(&self, position: &super::movement::relative_position::RelativePosition) -> (Vec<super::movement::relative_position::RelativePosition>, bool) {
         match self{
             Piece::King{piece} => piece.valid_move(position),
@@ -105,9 +119,41 @@ impl Piece {
         }
     }
 
-    pub fn undo_move(&mut self){
-        if let Piece::Pawn{piece} = self{
-            piece.undo_moved();
+    pub fn has_moved(&self) -> bool{
+        match self{
+            Piece::King{piece} => piece.has_moved(),
+            Piece::Rook{piece} => piece.has_moved(),
+            Piece::Pawn{piece} => piece.has_moved(),
+            _ => false,
+        }
+    }
+
+    pub fn generate_valid_moves(&self) -> Vec<super::movement::relative_position::RelativePosition> {
+        match self{
+            Piece::King{piece} => piece.generate_valid_plays(),
+            Piece::Queen{piece} => piece.generate_valid_plays(),
+            Piece::Knight{piece} => piece.generate_valid_plays(),
+            Piece::Bishop{piece} => piece.generate_valid_plays(),
+            Piece::Rook{piece} => piece.generate_valid_plays(),
+            Piece::Pawn{piece} => piece.generate_valid_moves(),
+        }
+    }
+    
+    pub fn generate_valid_captures(&self) -> Vec<super::movement::relative_position::RelativePosition> {
+        match self{
+            Piece::King{piece} => piece.generate_valid_plays(),
+            Piece::Queen{piece} => piece.generate_valid_plays(),
+            Piece::Knight{piece} => piece.generate_valid_plays(),
+            Piece::Bishop{piece} => piece.generate_valid_plays(),
+            Piece::Rook{piece} => piece.generate_valid_plays(),
+            Piece::Pawn{piece} => piece.generate_valid_captures(),
+        }
+    }
+
+    pub fn promote(&self, piece_type : PieceType) -> Piece{
+        match self{
+            Piece::Pawn{piece} => piece.promote(piece_type),
+            _ => panic!("Invalid piece type"),
         }
     }
 }
@@ -126,14 +172,14 @@ impl Display for Piece {
 }
 
 impl GenerateValidMoves for Piece{
-    fn generate_valid_moves(&self) -> Vec<super::movement::relative_position::RelativePosition> {
+    fn generate_valid_plays(&self) -> Vec<super::movement::relative_position::RelativePosition> {
         match self{
-            Piece::King{piece} => piece.generate_valid_moves(),
-            Piece::Queen{piece} => piece.generate_valid_moves(),
-            Piece::Knight{piece} => piece.generate_valid_moves(),
-            Piece::Bishop{piece} => piece.generate_valid_moves(),
-            Piece::Rook{piece} => piece.generate_valid_moves(),
-            Piece::Pawn{piece} => piece.generate_valid_moves(),
+            Piece::King{piece} => piece.generate_valid_plays(),
+            Piece::Queen{piece} => piece.generate_valid_plays(),
+            Piece::Knight{piece} => piece.generate_valid_plays(),
+            Piece::Bishop{piece} => piece.generate_valid_plays(),
+            Piece::Rook{piece} => piece.generate_valid_plays(),
+            Piece::Pawn{piece} => piece.generate_valid_plays(),
         }
     }
 }

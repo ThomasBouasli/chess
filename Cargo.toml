@@ -1,14 +1,14 @@
 [package]
-name = "chess"
+name = "better_chess"
 version = "0.1.0"
 edition = "2021"
 
-# [lib]
-# name = "mylib"
-# path = "src/lib.rs"
+[lib]
+name = "better_chess"
+path = "src/lib.rs"
 
 [[bin]]
-name = "mybin"
+name = "better_chess"
 path = "src/bin.rs"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

@@ -9,13 +9,14 @@ use crate::chess::{color::Color, movement::{ line::LineMovement,generate_valid_m
 
 pub struct Rook{
     color: Color,
+    is_first_move: bool,
 }
 
 impl LineMovement for Rook{}
 
 impl Rook{
     pub fn new(color: Color) -> Self {
-        Rook{color}
+        Rook{color , is_first_move: true}
     }
 
     pub fn color(&self) -> &Color {
@@ -34,6 +35,14 @@ impl Rook{
         '♖'
     }
 
+    pub fn moved(&mut self){
+        self.is_first_move = false;
+    }
+
+    pub fn has_moved(&self) -> bool{
+        !self.is_first_move
+    }
+
     pub fn valid_move(&self, position: &RelativePosition) -> (Vec<RelativePosition>, bool) {
         self.line_movement(position)
     }
@@ -44,7 +53,7 @@ impl Rook{
 }
 
 impl GenerateValidMoves for Rook{
-    fn generate_valid_moves(&self) -> Vec<RelativePosition> {
+    fn generate_valid_plays(&self) -> Vec<RelativePosition> {
         let mut moves = Vec::new();
 
         for dx in -7i8..=7 {
@@ -84,7 +93,7 @@ mod tests{
     fn test_generated_moves_should_be_valid(){
         let rook = Rook::new(Color::White);
 
-        let generated_moves = rook.generate_valid_moves();
+        let generated_moves = rook.generate_valid_plays();
 
         for movement in generated_moves{
             assert!(rook.valid_move(&movement).1 || rook.valid_capture(&movement).1);
@@ -95,7 +104,7 @@ mod tests{
     fn test_if_there_are_not_any_missing_valid_moves(){
         let rook = Rook::new(Color::White);
 
-        let generated_moves = rook.generate_valid_moves();
+        let generated_moves = rook.generate_valid_plays();
 
         let mut possible_moves = Vec::new();
 

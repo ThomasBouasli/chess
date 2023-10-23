@@ -8,11 +8,12 @@ use crate::chess::{color::Color, movement::{ generate_valid_moves::GenerateValid
 
 pub struct King{
     color: Color,
+    is_first_move: bool,
 }
 
 impl King{
     pub fn new(color: Color) -> Self {
-        King{color}
+        King{color , is_first_move: true}
     }
 
     pub fn color(&self) -> &Color {
@@ -31,6 +32,14 @@ impl King{
         '♔'
     }
 
+    pub fn moved(&mut self){
+        self.is_first_move = false;
+    }
+
+    pub fn has_moved(&self) -> bool{
+        !self.is_first_move
+    }
+
     pub fn valid_move(&self, position: &RelativePosition) -> (Vec<RelativePosition>, bool) {
         (Vec::new(), position.file.abs() <= 1 && position.rank.abs() <= 1 && (position.file != 0 || position.rank != 0))
     }
@@ -38,10 +47,30 @@ impl King{
     pub fn valid_capture(&self,  position: &RelativePosition) -> (Vec<RelativePosition>, bool) {
         self.valid_move(position)
     }
+
+    pub fn castle_queen_side(&self, position : &RelativePosition) -> (Vec<RelativePosition>, bool){
+        if position.rank == 0 && position.file == -2{
+            let vec = vec![RelativePosition{file: -1, rank: 0}, RelativePosition{file: -2, rank: 0}];
+
+            return (vec, true);
+        }
+
+        return (Vec::new(), false);
+    }
+
+    pub fn castle_king_side(&self, position : &RelativePosition) -> (Vec<RelativePosition>, bool){
+        if position.rank == 0 && position.file == 2{
+            let vec = vec![RelativePosition{file: 1, rank: 0}, RelativePosition{file: 2, rank: 0}];
+
+            return (vec, true);
+        }
+
+        return (Vec::new(), false);
+    }
 }
 
 impl GenerateValidMoves for King{
-    fn generate_valid_moves(&self) -> Vec<RelativePosition>{
+    fn generate_valid_plays(&self) -> Vec<RelativePosition>{
         let mut moves = Vec::new();
 
         for file in -1i8..=1{
@@ -124,7 +153,7 @@ mod tests{
     fn test_generated_moves_should_be_valid(){
         let king = King::new(Color::White);
 
-        let generated_moves = king.generate_valid_moves();
+        let generated_moves = king.generate_valid_plays();
 
         for movement in generated_moves{
             assert!(king.valid_move(&movement).1 || king.valid_capture(&movement).1);
@@ -135,7 +164,7 @@ mod tests{
     fn test_if_there_are_not_any_missing_valid_moves(){
         let king = King::new(Color::White);
 
-        let generated_moves = king.generate_valid_moves();
+        let generated_moves = king.generate_valid_plays();
 
         let mut possible_moves = Vec::new();
 

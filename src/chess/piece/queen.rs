@@ -54,7 +54,7 @@ impl Queen{
 }
 
 impl GenerateValidMoves for Queen{
-    fn generate_valid_moves(&self) -> Vec<RelativePosition> {
+    fn generate_valid_plays(&self) -> Vec<RelativePosition> {
         let mut moves = Vec::new();
 
         for dx in -7i8..=7 {
@@ -98,7 +98,7 @@ mod tests{
         let queen = Queen::new(Color::White);
 
         // Get the valid moves for the Queen
-        let valid_moves = queen.generate_valid_moves();
+        let valid_moves = queen.generate_valid_plays();
 
         let expected_moves: Vec<RelativePosition> = vec![
             RelativePosition { file: 1, rank: 1 },
@@ -126,7 +126,7 @@ mod tests{
     fn test_generated_moves_should_be_valid(){
         let queen = Queen::new(Color::White);
 
-        let generated_moves = queen.generate_valid_moves();
+        let generated_moves = queen.generate_valid_plays();
 
         for movement in generated_moves{
             assert!(queen.valid_move(&movement).1 || queen.valid_capture(&movement).1);
@@ -137,7 +137,7 @@ mod tests{
     fn test_if_there_are_not_any_missing_valid_moves(){
         let queen = Queen::new(Color::White);
 
-        let generated_moves = queen.generate_valid_moves();
+        let generated_moves = queen.generate_valid_plays();
 
         let mut possible_moves = Vec::new();
 

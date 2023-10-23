@@ -4,6 +4,8 @@ use colored::Colorize;
 
 use crate::chess::{color::Color, movement::{generate_valid_moves::GenerateValidMoves, relative_position::RelativePosition}};
 
+use super::{Piece, PieceType};
+
 
 #[derive(Clone)]
 
@@ -37,8 +39,8 @@ impl Pawn{
         self.is_first_move = false;
     }
 
-    pub fn undo_moved(&mut self){
-        self.is_first_move = true;
+    pub fn has_moved(&self) -> bool{
+        !self.is_first_move
     }
 
     pub fn multiplier(&self) -> i8{
@@ -67,10 +69,17 @@ impl Pawn{
             (Vec::new(), false) 
         }
     }
-}
 
-impl GenerateValidMoves for Pawn{
-    fn generate_valid_moves(&self) -> Vec<RelativePosition>{
+    pub fn generate_valid_captures(&self) -> Vec<RelativePosition>{
+        let mut moves = Vec::new();
+
+        moves.push(RelativePosition{file: 1, rank: 1 * self.multiplier()});
+        moves.push(RelativePosition{file: -1, rank: 1 * self.multiplier()});
+
+        moves
+    }
+
+    pub fn generate_valid_moves(&self) -> Vec<RelativePosition>{
         let mut moves = Vec::new();
 
         moves.push(RelativePosition{file: 0, rank: 1 * self.multiplier()});
@@ -79,8 +88,26 @@ impl GenerateValidMoves for Pawn{
             moves.push(RelativePosition{file: 0, rank: 2 * self.multiplier()});
         }
 
-        moves.push(RelativePosition{file: 1, rank: 1 * self.multiplier()});
-        moves.push(RelativePosition{file: -1, rank: 1 * self.multiplier()});
+        moves
+    }
+
+    pub fn promote(&self, piece_type : PieceType) -> Piece{
+        match piece_type{
+            PieceType::Queen => Piece::Queen{piece: super::queen::Queen::new(self.color)},
+            PieceType::Rook => Piece::Rook{piece: super::rook::Rook::new(self.color)},
+            PieceType::Bishop => Piece::Bishop{piece: super::bishop::Bishop::new(self.color)},
+            PieceType::Knight => Piece::Knight{piece: super::knight::Knight::new(self.color)},
+            _ => panic!("Invalid piece type"),
+        }
+    }
+}
+
+impl GenerateValidMoves for Pawn{
+    fn generate_valid_plays(&self) -> Vec<RelativePosition>{
+        let mut moves = Vec::new();
+
+        moves.append(&mut self.generate_valid_captures());
+        moves.append(&mut self.generate_valid_moves());
 
         moves
     }
@@ -172,7 +199,7 @@ mod tests{
     fn test_generated_moves_should_be_valid(){
         let pawn = Pawn::new(Color::White);
 
-        let generated_moves = pawn.generate_valid_moves();
+        let generated_moves = pawn.generate_valid_plays();
 
         for movement in generated_moves{
             assert!(pawn.valid_move(&movement).1 || pawn.valid_capture(&movement).1);
@@ -183,7 +210,7 @@ mod tests{
     fn test_if_there_are_not_any_missing_valid_moves(){
         let pawn = Pawn::new(Color::White);
 
-        let generated_moves = pawn.generate_valid_moves();
+        let generated_moves = pawn.generate_valid_plays();
 
         let mut possible_moves = Vec::new();
 

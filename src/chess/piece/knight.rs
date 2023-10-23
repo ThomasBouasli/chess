@@ -46,7 +46,7 @@ impl Knight{
 }
 
 impl GenerateValidMoves for Knight{
-    fn generate_valid_moves(&self) -> Vec<RelativePosition>{
+    fn generate_valid_plays(&self) -> Vec<RelativePosition>{
         let mut moves = Vec::new();
 
         for file in -2i8..=2{
@@ -108,7 +108,7 @@ mod tests{
     fn test_generated_moves_should_be_valid(){
         let knight = Knight::new(Color::White);
 
-        let generated_moves = knight.generate_valid_moves();
+        let generated_moves = knight.generate_valid_plays();
 
         for movement in generated_moves{
             assert!(knight.valid_move(&movement).1 || knight.valid_capture(&movement).1);
@@ -119,7 +119,7 @@ mod tests{
     fn test_if_there_are_not_any_missing_valid_moves(){
         let knight = Knight::new(Color::White);
 
-        let generated_moves = knight.generate_valid_moves();
+        let generated_moves = knight.generate_valid_plays();
 
         let mut possible_moves = Vec::new();
 

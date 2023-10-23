@@ -42,7 +42,7 @@ impl Bishop{
 }
 
 impl GenerateValidMoves for Bishop{
-    fn generate_valid_moves(&self) -> Vec<RelativePosition> {
+    fn generate_valid_plays(&self) -> Vec<RelativePosition> {
         let mut moves = Vec::new();
 
         for dx in -7i8..=7 {
@@ -82,7 +82,7 @@ mod tests{
     fn test_generated_moves_should_be_valid(){
         let bishop = Bishop::new(Color::White);
 
-        let generated_moves = bishop.generate_valid_moves();
+        let generated_moves = bishop.generate_valid_plays();
 
         for movement in generated_moves{
             assert!(bishop.valid_move(&movement).1 || bishop.valid_capture(&movement).1);
@@ -93,7 +93,7 @@ mod tests{
     fn test_if_there_are_not_any_missing_valid_moves(){
         let bishop = Bishop::new(Color::White);
 
-        let generated_moves = bishop.generate_valid_moves();
+        let generated_moves = bishop.generate_valid_plays();
 
         let mut possible_moves = Vec::new();
 

@@ -9,6 +9,7 @@ pub enum GameState{
     Checkmate(Color),
     Stalemate,
     InProgress,
+    Promoting,
 }
 
 #[derive(Clone)]
@@ -17,6 +18,15 @@ pub struct Game{
     turn: Color,
     moves: Vec<Movement>,
     state: GameState
+}
+
+pub trait IGame{
+    fn new(board: Board, turn: Color) -> Self;
+    fn board(&self) -> &Board;
+    fn turn(&self) -> &Color;
+    fn state(&self) -> &GameState;
+    fn move_piece(&mut self, movement: Movement) -> Result<&GameState, String>;
+    fn get_values(&self) -> (i32, i32);
 }
 
 impl Game{
@@ -81,11 +91,16 @@ impl Game{
     /// 
     /// ```
     pub fn move_piece(&mut self, movement: Movement) -> Result<&GameState, String>{
+        if self.state == GameState::Promoting{
+            return Err(String::from("Cannot move piece while promoting!"));
+        }
+
         self.state = GameState::InProgress;
 
         if let Err(e) = self.is_legal_play(&movement){
             return Err(e);
         }
+
 
         let mut game = self.clone();
 
@@ -132,6 +147,17 @@ impl Game{
     }
 
     fn make_move(&mut self, movement: Movement) -> Result<(), String>{
+        
+        match self.execute_castle(&movement) {
+            Ok(_) => (),
+            Err(err) => {
+                if err != String::from("Movement is not a castle!"){
+                    return Err(err);
+                }
+            }
+        };
+
+
         let mut piece = match self.board.get_tile_mut(movement.from()).remove_piece(){
             Some(piece) => piece,
             None => return Err(String::from("No piece on tile!")),
@@ -172,6 +198,18 @@ impl Game{
             return Ok(());
         }
 
+        if piece.prefix() == 'P'{
+            return self.allow_en_passante(piece, movement);
+        }
+
+        if piece.prefix() == 'K'{
+            return self.allow_castle(piece, movement);
+        }
+
+        Err(String::from("Invalid move!"))
+    }
+
+    fn allow_en_passante(&self, piece : &Piece, movement: &Movement) -> Result<(), String>{
         if piece.prefix() != 'P'{
             return Err(String::from("Invalid move!"));
         }
@@ -198,6 +236,147 @@ impl Game{
         return Ok(());
     }
 
+    /// Allows the player to castle
+    /// 
+    /// ### Arguments
+    /// 
+    /// * `piece` - The king piece
+    /// * `movement` - The movement to be made
+    /// 
+    /// A queen side castle is defined by moving the king two tiles to the left
+    /// A king side castle is defined by moving the king two tiles to the right
+    /// 
+    /// then a check is ran to verify that the king and corresponding rook have not moved
+    /// also checks that the king is not moving through check
+    fn allow_castle(&self, piece : &Piece, movement: &Movement) -> Result<(), String>{
+
+
+        if piece.prefix() != 'K'{
+            return Err(String::from("Invalid move!"));
+        }
+
+        if piece.has_moved(){
+            return Err(String::from("Invalid move!"));
+        }
+
+        enum Castle{
+            QueenSide,
+            KingSide,
+        }
+
+        let allowed_rank = match piece.color(){
+            Color::White => 0,
+            Color::Black => 7,
+        };
+
+        let allowed_file = 4;
+
+        let allowed_king_position = AbsolutePosition::new(allowed_file, allowed_rank);
+
+        if movement.from() != &allowed_king_position{
+            return Err(String::from("Invalid move!"));
+        }
+
+        let castle = match movement.to().file{
+            2 => Castle::QueenSide,
+            6 => Castle::KingSide,
+            _ => return Err(String::from("Invalid move!")),
+        };
+
+        let rook_position = match castle{
+            Castle::QueenSide => AbsolutePosition::new(0, allowed_rank),
+            Castle::KingSide => AbsolutePosition::new(7, allowed_rank),
+        };
+
+        let rook = match self.board.get_tile(&rook_position).get_piece(){
+            Some(piece) => {
+                if piece.prefix() != 'R'{
+                    return Err(String::from("Invalid move!"));
+                }
+
+                piece
+            },
+            None => return Err(String::from("Invalid move!"))
+        };
+
+        if rook.has_moved(){
+            return Err(String::from("Invalid move!"));
+        }
+
+        let relative_position = movement.to().to_relative(movement.from());
+
+        let (path, valid) = match castle{
+            Castle::QueenSide => piece.castle_queen_side(&relative_position),
+            Castle::KingSide => piece.castle_king_side(&relative_position),
+        };
+
+        if !valid || self.is_colliding(&path, movement.from()){
+            return Err(String::from("Invalid move!"));
+        }
+
+        if self.path_is_in_check(&path, movement.from()){
+            return Err(String::from("Invalid move!"));
+        }
+
+        Ok(())
+    }
+
+    fn execute_castle(&mut self, movement: &Movement) -> Result<(), String>{
+
+        enum Castle{
+            QueenSide,
+            KingSide,
+        }
+
+        let piece = match self.board.get_tile(movement.from()).get_piece(){
+            Some(piece) => piece,
+            None => return Err(String::from("Movement is not a castle!")),
+        };
+
+        if !self.movement_is_castle(piece, movement){
+            return Err(String::from("Movement is not a castle!"));
+        }
+
+        let castle = match movement.to().file{
+            2 => Castle::QueenSide,
+            6 => Castle::KingSide,
+            _ => return Err(String::from("Invalid move!")),
+        };
+
+        let rook_position = match castle{
+            Castle::QueenSide => AbsolutePosition::new(0, movement.to().rank),
+            Castle::KingSide => AbsolutePosition::new(7, movement.to().rank),
+        };
+
+        let rook = match self.board.get_tile_mut(&rook_position).remove_piece(){
+            Some(piece) => piece,
+            None => return Err(String::from("Invalid move!")),
+        };
+
+        let rook_position = match castle{
+            Castle::QueenSide => AbsolutePosition::new(3, movement.to().rank),
+            Castle::KingSide => AbsolutePosition::new(5, movement.to().rank),
+        };
+
+        self.board.get_tile_mut(&rook_position).set_piece(rook);
+
+        Ok(())
+    }
+
+    fn movement_is_castle(&self, piece : &Piece, movement: &Movement) -> bool{
+        if piece.prefix() != 'K'{
+            return false;
+        }
+
+        let relative_position = movement.to().to_relative(movement.from());
+
+        if !piece.castle_king_side(&relative_position).1 && !piece.castle_queen_side(&relative_position).1{
+            return false;
+        }
+
+        return true;
+    }
+
     fn is_legal_move(&self, piece: &Piece, piece_position: &AbsolutePosition, relative_position: &RelativePosition) -> bool{
         let (path, valid) = piece.valid_move(relative_position);
 
@@ -221,14 +400,142 @@ impl Game{
 
         true
     }
+    
+    fn movement_from_chess_notation(&self, destination: AbsolutePosition, piece_prefix : Option<char>, rank_from : Option<usize>, file_from: Option<usize>, is_capture: bool) -> Result<Movement,String>{
+        let piece_prefix = match piece_prefix{
+            Some(prefix) => prefix,
+            None => 'P',
+        };
 
-    fn generate_legal_move(&self, color : &Color) -> Vec<Movement>{
+        let mut response : Option<Movement> = None;
+
+        let legal_moves = match is_capture{
+            true => self.generate_legal_captures_for_piece_type(piece_prefix, &self.turn()),
+            false => self.generate_legal_move_for_piece_type(piece_prefix, &self.turn()),
+        };
+
+        for movement in legal_moves{
+            if movement.to() == &destination{
+                if response.is_some(){
+
+                    if let Some(rank_from) = rank_from{
+                        if movement.from().rank != rank_from{
+                            continue;
+                        }
+                    }
+
+                    if let Some(file_from) = file_from{
+                        if movement.from().file != file_from{
+                            continue;
+                        }
+                    }
+
+                    return Err(String::from("Ambiguous move!"));
+
+                }
+
+                response = Some(movement);
+            }
+        }
+
+        match response{
+            Some(movement) => Ok(movement),
+            None => Err(String::from("Invalid move!")),
+        }
+    }
+
+    fn generate_legal_move_for_piece_type(&self, piece_prefix: char,color : &Color) -> Vec<Movement>{
         let mut legal_moves = Vec::new();
 
         for (tile, position) in self.board.get_tiles(){
             if let Some(piece) = tile.get_piece(){
                 if piece.color() == color{
+                    if piece.prefix() != piece_prefix {
+                        continue;
+                    }
                     for relative_position in piece.generate_valid_moves(){
+
+                        let absolute = match relative_position.to_absolute(&position){
+                            Ok(position) => position,
+                            Err(_) => continue,
+                        };
+
+                        match self.is_legal_play(&Movement::new(position.clone(), absolute.clone())){
+                            Ok(_) => (),
+                            Err(_) => continue,
+                        };
+
+                        let movement = Movement::new(position.clone(), absolute);
+
+                        let mut game = self.clone();
+
+                        game.make_move(movement.clone()).unwrap();
+
+                        if let Some(color) = game.is_check(){
+                            if color == *self.turn(){
+                                continue;
+                            }
+                        }
+
+                        legal_moves.push(movement);
+                    }
+                }
+            }
+        }
+
+        legal_moves
+    }
+
+
+    fn generate_legal_captures_for_piece_type(&self, piece_prefix: char,color : &Color) -> Vec<Movement>{
+        let mut legal_moves = Vec::new();
+
+        for (tile, position) in self.board.get_tiles(){
+            if let Some(piece) = tile.get_piece(){
+                if piece.color() == color{
+                    if piece.prefix() != piece_prefix {
+                        continue;
+                    }
+                    for relative_position in piece.generate_valid_captures(){
+
+                        let absolute = match relative_position.to_absolute(&position){
+                            Ok(position) => position,
+                            Err(_) => continue,
+                        };
+
+                        match self.is_legal_play(&Movement::new(position.clone(), absolute.clone())){
+                            Ok(_) => (),
+                            Err(_) => continue,
+                        };
+
+                        let movement = Movement::new(position.clone(), absolute);
+
+                        let mut game = self.clone();
+
+                        game.make_move(movement.clone()).unwrap();
+
+                        if let Some(color) = game.is_check(){
+                            if color == *self.turn(){
+                                continue;
+                            }
+                        }
+
+                        legal_moves.push(movement);
+                    }
+                }
+            }
+        }
+
+        legal_moves
+    }
+
+    fn generate_legal_plays(&self, color : &Color) -> Vec<Movement>{
+        let mut legal_moves = Vec::new();
+
+        for (tile, position) in self.board.get_tiles(){
+            if let Some(piece) = tile.get_piece(){
+                if piece.color() == color{
+                    for relative_position in piece.generate_valid_plays(){
 
                         let absolute = match relative_position.to_absolute(&position){
                             Ok(position) => position,
@@ -272,8 +579,28 @@ impl Game{
         false   
     }
 
+    fn path_is_in_check(&self, movement_path: &Vec<RelativePosition>, piece_position : &AbsolutePosition) -> bool{
+        let game = self.clone();
+
+        for relative_position in movement_path{
+            let position = relative_position.to_absolute(piece_position).unwrap();
+
+            let mut game = game.clone();
+
+            game.make_move(Movement::new(piece_position.clone(), position.clone())).unwrap();
+
+            if let Some(color) = game.is_check(){
+                if color == *self.turn(){
+                    return true;
+                }
+            }
+        }
+
+        false
+    }
+
     fn is_check_mate(&self) -> Option<GameState>{
-        let legal_moves = self.generate_legal_move(&self.turn());
+        let legal_moves = self.generate_legal_plays(&self.turn());
 
         if legal_moves.len() == 0{
             if let Some(color) = self.is_check(){
@@ -406,7 +733,7 @@ mod tests{
     fn test_generates_valid_moves(){
         let game = ClassicGame::new();
 
-        let moves = game.generate_legal_move(game.turn());
+        let moves = game.generate_legal_plays(game.turn());
 
         for movement in moves{
             let mut game = game.clone();
@@ -431,7 +758,7 @@ mod tests{
         assert_eq!(game.move_piece(m3),  Ok(&GameState::Check(Color::Black)));
         assert_eq!(game.state(), &GameState::Check(Color::Black));
 
-        let moves = game.generate_legal_move(game.turn());
+        let moves = game.generate_legal_plays(game.turn());
 
         let expected_move = Movement::new(ChessNotationPosition::new('g', 7).to_position(), ChessNotationPosition::new('g', 6).to_position());
 
@@ -556,5 +883,167 @@ mod tests{
 
         assert_eq!(game.move_piece(m3), Ok(&GameState::InProgress));
         assert_eq!(game.get_values(), (39, 38));
-    } 
+    }
+
+    #[test]
+    fn test_can_castle_king_side(){
+        let mut game = ClassicGame::new();
+
+        let m1 = Movement::new(ChessNotationPosition::new('e', 2).to_position(), ChessNotationPosition::new('e', 4).to_position());
+        let m2 = Movement::new(ChessNotationPosition::new('a', 7).to_position(), ChessNotationPosition::new('a', 6).to_position());
+        let m3 = Movement::new(ChessNotationPosition::new('f', 1).to_position(), ChessNotationPosition::new('c', 4).to_position());
+        let m4 = Movement::new(ChessNotationPosition::new('b', 7).to_position(), ChessNotationPosition::new('b', 6).to_position());
+        let m5 = Movement::new(ChessNotationPosition::new('g', 1).to_position(), ChessNotationPosition::new('f', 3).to_position());
+        let m6 = Movement::new(ChessNotationPosition::new('c', 7).to_position(), ChessNotationPosition::new('c', 6).to_position());
+        let m7 = Movement::new(ChessNotationPosition::new('e', 1).to_position(), ChessNotationPosition::new('g', 1).to_position());
+
+
+        assert_eq!(game.move_piece(m1), Ok(&GameState::InProgress));
+        assert_eq!(game.move_piece(m2), Ok(&GameState::InProgress));
+        assert_eq!(game.move_piece(m3), Ok(&GameState::InProgress));
+        assert_eq!(game.move_piece(m4), Ok(&GameState::InProgress));
+        assert_eq!(game.move_piece(m5), Ok(&GameState::InProgress));
+        assert_eq!(game.move_piece(m6), Ok(&GameState::InProgress));
+        assert_eq!(game.move_piece(m7), Ok(&GameState::InProgress));
+
+        let king_tile = game.board.get_tile(&ChessNotationPosition::new('g', 1).to_position());
+        let rook_tile = game.board.get_tile(&ChessNotationPosition::new('f', 1).to_position());
+
+        let king_piece = match king_tile.get_piece(){
+            Some(piece) => piece,
+            None => panic!("No piece on tile!"),
+        };
+
+        let rook_piece = match rook_tile.get_piece(){
+            Some(piece) => piece,
+            None => panic!("No piece on tile!"),
+        };
+
+        assert_eq!(king_piece.prefix(), 'K');
+        assert_eq!(rook_piece.prefix(), 'R');
+    }
+
+    #[test]
+    fn test_can_castle_queen_side(){
+        let mut game = ClassicGame::new();
+
+        let m1 = Movement::new(ChessNotationPosition::new('d', 2).to_position(), ChessNotationPosition::new('d', 4).to_position());
+        let m2 = Movement::new(ChessNotationPosition::new('a', 7).to_position(), ChessNotationPosition::new('a', 6).to_position());
+        let m3 = Movement::new(ChessNotationPosition::new('c', 1).to_position(), ChessNotationPosition::new('g', 5).to_position());
+        let m4 = Movement::new(ChessNotationPosition::new('b', 7).to_position(), ChessNotationPosition::new('b', 6).to_position());
+        let m5 = Movement::new(ChessNotationPosition::new('b', 1).to_position(), ChessNotationPosition::new('c', 3).to_position());
+        let m6 = Movement::new(ChessNotationPosition::new('c', 7).to_position(), ChessNotationPosition::new('c', 6).to_position());
+        let m7 = Movement::new(ChessNotationPosition::new('d', 1).to_position(), ChessNotationPosition::new('d', 2).to_position());
+        let m8 = Movement::new(ChessNotationPosition::new('d', 7).to_position(), ChessNotationPosition::new('d', 6).to_position());
+        let m9 = Movement::new(ChessNotationPosition::new('e', 1).to_position(), ChessNotationPosition::new('c', 1).to_position());
+
+        assert_eq!(game.move_piece(m1), Ok(&GameState::InProgress));
+        assert_eq!(game.move_piece(m2), Ok(&GameState::InProgress));
+        assert_eq!(game.move_piece(m3), Ok(&GameState::InProgress));
+        assert_eq!(game.move_piece(m4), Ok(&GameState::InProgress));
+        assert_eq!(game.move_piece(m5), Ok(&GameState::InProgress));
+        assert_eq!(game.move_piece(m6), Ok(&GameState::InProgress));
+        assert_eq!(game.move_piece(m7), Ok(&GameState::InProgress));
+        assert_eq!(game.move_piece(m8), Ok(&GameState::InProgress));
+        assert_eq!(game.move_piece(m9), Ok(&GameState::InProgress));
+
+        let king_tile = game.board.get_tile(&ChessNotationPosition::new('c', 1).to_position());
+        let rook_tile = game.board.get_tile(&ChessNotationPosition::new('d', 1).to_position());
+
+        let king_piece = match king_tile.get_piece(){
+            Some(piece) => piece,
+            None => panic!("No piece on tile!"),
+        };
+
+        let rook_piece = match rook_tile.get_piece(){
+            Some(piece) => piece,
+            None => panic!("No piece on tile!"),
+        };
+
+        assert_eq!(king_piece.prefix(), 'K');
+        assert_eq!(rook_piece.prefix(), 'R');
+    }
+
+    #[test]
+    fn test_cant_castle_queen_side_when_path_is_in_check(){
+        let mut game = ClassicGame::new();
+
+        let m1 = Movement::new(ChessNotationPosition::new('d', 2).to_position(), ChessNotationPosition::new('d', 4).to_position());
+        let m2 = Movement::new(ChessNotationPosition::new('g', 7).to_position(), ChessNotationPosition::new('g', 6).to_position());
+        let m3 = Movement::new(ChessNotationPosition::new('c', 1).to_position(), ChessNotationPosition::new('g', 5).to_position());
+        let m4 = Movement::new(ChessNotationPosition::new('f', 8).to_position(), ChessNotationPosition::new('h', 6).to_position());
+        let m5 = Movement::new(ChessNotationPosition::new('b', 1).to_position(), ChessNotationPosition::new('c', 3).to_position());
+        let m6 = Movement::new(ChessNotationPosition::new('h', 6).to_position(), ChessNotationPosition::new('g', 5).to_position());
+        let m7 = Movement::new(ChessNotationPosition::new('d', 1).to_position(), ChessNotationPosition::new('d', 3).to_position());
+        let m8 = Movement::new(ChessNotationPosition::new('d', 7).to_position(), ChessNotationPosition::new('d', 6).to_position());
+        let m9 = Movement::new(ChessNotationPosition::new('e', 1).to_position(), ChessNotationPosition::new('c', 1).to_position());
+
+        assert_eq!(game.move_piece(m1), Ok(&GameState::InProgress));
+        assert_eq!(game.move_piece(m2), Ok(&GameState::InProgress));
+        assert_eq!(game.move_piece(m3), Ok(&GameState::InProgress));
+        assert_eq!(game.move_piece(m4), Ok(&GameState::InProgress));
+        assert_eq!(game.move_piece(m5), Ok(&GameState::InProgress));
+        assert_eq!(game.move_piece(m6), Ok(&GameState::InProgress));
+        assert_eq!(game.move_piece(m7), Ok(&GameState::InProgress));
+        assert_eq!(game.move_piece(m8), Ok(&GameState::InProgress));
+        assert_eq!(game.move_piece(m9), Err(String::from("Invalid move!")));
+
+        let king_tile = game.board.get_tile(&ChessNotationPosition::new('e', 1).to_position());
+        let rook_tile = game.board.get_tile(&ChessNotationPosition::new('a', 1).to_position());
+
+        let king_piece = match king_tile.get_piece(){
+            Some(piece) => piece,
+            None => panic!("No piece on tile!"),
+        };
+
+        let rook_piece = match rook_tile.get_piece(){
+            Some(piece) => piece,
+            None => panic!("No piece on tile!"),
+        };
+
+        assert_eq!(king_piece.prefix(), 'K');
+        assert_eq!(rook_piece.prefix(), 'R');
+    }
+
+    #[test]
+    fn test_should_find_move_from_chess_notation(){
+        let game = ClassicGame::new();
+
+        let input = ChessNotationPosition::new('e', 4).to_position();
+
+        let movement = game.movement_from_chess_notation(input, None, None, None, false);
+
+        assert_eq!(movement, Ok(Movement::new(ChessNotationPosition::new('e', 2).to_position(), ChessNotationPosition::new('e', 4).to_position())));
+    }
+
+    #[test]
+    fn test_should_find_move_from_chess_notation_in_ambiguous_case(){
+        let mut game = ClassicGame::new();
+
+        let i1 = ChessNotationPosition::new('e', 4).to_position();
+        let i2 = ChessNotationPosition::new('f', 5).to_position();
+        let i3 = ChessNotationPosition::new('g', 4).to_position();
+        let i4 = ChessNotationPosition::new('a', 5).to_position();
+        let i5_ambiguous = ChessNotationPosition::new('f', 5).to_position();
+
+        let m1 = game.movement_from_chess_notation(i1, None, None, None, false);
+        game.move_piece(m1.unwrap()).unwrap();
+        let m2 = game.movement_from_chess_notation(i2, None, None, None, false);
+        game.move_piece(m2.unwrap()).unwrap();
+        let m3 = game.movement_from_chess_notation(i3, None, None, None, false);
+        game.move_piece(m3.unwrap()).unwrap();
+        let m4 = game.movement_from_chess_notation(i4, None, None, None, false);
+        game.move_piece(m4.unwrap()).unwrap();
+        let m5_ambiguous = game.movement_from_chess_notation(i5_ambiguous, None, None, None, true);
+
+        assert_eq!(m5_ambiguous, Err(String::from("Ambiguous move!")));
+
+        let m5_ambiguous = game.movement_from_chess_notation(i5_ambiguous, None,  Some(i1.rank), None, true);
+
+        assert_eq!(m5_ambiguous, Err(String::from("Ambiguous move!")));
+
+        let m5 = game.movement_from_chess_notation(i5_ambiguous, None, None, Some(i1.file), true);
+
+        assert_eq!(m5, Ok(Movement::new(ChessNotationPosition::new('e', 4).to_position(), ChessNotationPosition::new('f', 5).to_position())));
+    }
 }
